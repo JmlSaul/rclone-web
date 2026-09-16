@@ -3,6 +3,7 @@ import {
     ArchiveIcon,
     CloudIcon,
     DownloadIcon,
+    EllipsisVerticalIcon,
     FileIcon,
     FileImageIcon,
     FileSpreadsheetIcon,
@@ -14,6 +15,7 @@ import {
     ImageIcon,
     MonitorIcon,
     MusicIcon,
+    PanelLeftIcon,
     PencilIcon,
     SearchIcon,
     SendIcon,
@@ -46,6 +48,13 @@ import {
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import {
     Empty,
     EmptyContent,
     EmptyDescription,
@@ -59,6 +68,7 @@ import {
     InputGroupButton,
     InputGroupInput,
 } from '@/components/ui/input-group'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Progress } from '@/components/ui/progress'
 import { Spinner } from '@/components/ui/spinner'
 import {
@@ -75,7 +85,12 @@ import { useT } from '@/lib/i18n'
 import { useStore } from '@/lib/store'
 import { cn } from '@/lib/ui'
 import rclone, { rcloneAsync } from '@/rclone/client'
-import { fetchLocalUsage, fetchRemotesList, fetchRemoteUsage } from '@/rclone/usage'
+import {
+    fetchLocalUsage,
+    fetchRemotesList,
+    fetchRemoteUsage,
+    type RemoteUsage,
+} from '@/rclone/usage'
 
 const IMAGE_EXTS = new Set([
     'jpg',
@@ -177,19 +192,157 @@ function buildLocalPathHref(disk: string, path: string) {
     return `/local?${params}`
 }
 
-function formatModTime(modTime: string | undefined): string {
-    if (!modTime) return '\u2014'
-    try {
-        const date = new Date(modTime)
-        if (Number.isNaN(date.getTime())) return '\u2014'
-        return date.toLocaleDateString(undefined, {
+function formatModTimeParts(modTime: string | undefined) {
+    if (!modTime) return null
+    const date = new Date(modTime)
+    if (Number.isNaN(date.getTime())) return null
+
+    const pad = (value: number) => String(value).padStart(2, '0')
+
+    return {
+        date: date.toLocaleDateString(undefined, {
             month: 'short',
             day: 'numeric',
             year: 'numeric',
-        })
-    } catch {
-        return '\u2014'
+        }),
+        time: `${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`,
     }
+}
+
+function formatModTime(modTime: string | undefined): string {
+    const parts = formatModTimeParts(modTime)
+    return parts ? `${parts.date} ${parts.time}` : '\u2014'
+}
+
+function ModTimeCell({ modTime }: { modTime: string | undefined }) {
+    const parts = formatModTimeParts(modTime)
+
+    if (!parts) return <span className="font-medium text-muted-foreground">{'\u2014'}</span>
+
+    return (
+        <span className="flex flex-col font-medium text-muted-foreground">
+            <span>{parts.date}</span>
+            <span className="font-normal tabular-nums text-xs">{parts.time}</span>
+        </span>
+    )
+}
+
+type TransferSource = {
+    fs: string
+    path: string
+    name: string
+    isDir: boolean
+}
+
+function TransferPanel({
+    source,
+    isPending,
+    onCancel,
+    onExecute,
+}: {
+    source: TransferSource
+    isPending: boolean
+    onCancel: () => void
+    onExecute: (mode: 'copy' | 'move') => void
+}) {
+    const t = useT()
+
+    return (
+        <Card size="sm" className="gap-0">
+            <CardHeader className="pb-2">
+                <div className="flex items-center justify-between gap-2">
+                    <CardTitle className="text-sm">{t('remotesDetails.transfer')}</CardTitle>
+                    <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon-xs"
+                        aria-label={t('remotesDetails.cancelTransfer')}
+                        onClick={onCancel}
+                    >
+                        <XIcon className="size-3.5" />
+                    </Button>
+                </div>
+            </CardHeader>
+            <CardContent className="space-y-3">
+                <div className="flex items-center gap-2 text-xs">
+                    {source.isDir ? (
+                        <FolderIcon className="size-3.5 shrink-0 text-indigo-400" />
+                    ) : (
+                        <FileIcon className="size-3.5 shrink-0 text-muted-foreground" />
+                    )}
+                    <span className="truncate font-medium">{source.name}</span>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                    {t('remotesDetails.transferFrom', {
+                        remote: source.fs.replace(/[/:]+$/, ''),
+                        path: source.path.split('/').slice(0, -1).join('/') || '/',
+                    })}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                    {t('remotesDetails.navigateToDestination')}
+                </p>
+                <div className="flex gap-2">
+                    <Button
+                        type="button"
+                        size="xs"
+                        variant="outline"
+                        className="flex-1"
+                        disabled={isPending}
+                        onClick={() => onExecute('move')}
+                    >
+                        {t('remotesDetails.moveHere')}
+                    </Button>
+                    <Button
+                        type="button"
+                        size="xs"
+                        className="flex-1"
+                        disabled={isPending}
+                        onClick={() => onExecute('copy')}
+                    >
+                        {t('remotesDetails.copyHere')}
+                    </Button>
+                </div>
+            </CardContent>
+        </Card>
+    )
+}
+
+function StorageUsageBody({
+    usage,
+    isPending,
+    fallbackText,
+}: {
+    usage: RemoteUsage | null
+    isPending: boolean
+    fallbackText: string
+}) {
+    const t = useT()
+
+    if (isPending) {
+        return (
+            <div className="flex justify-center py-2">
+                <Spinner className="size-4" />
+            </div>
+        )
+    }
+
+    if (!usage) {
+        return <p className="text-xs text-muted-foreground">{fallbackText}</p>
+    }
+
+    return (
+        <>
+            <Progress value={usage.barPercent ?? 50} />
+            <p className="text-xs text-muted-foreground">
+                {usage.totalLabel
+                    ? t('remotesDetails.storageUsedOf', {
+                          used: usage.usedLabel,
+                          total: usage.totalLabel,
+                      })
+                    : t('remotesDetails.storageUsed', { used: usage.usedLabel })}
+            </p>
+        </>
+    )
 }
 
 function buildServeUrl(rcUrl: string, serveAddr: string): string {
@@ -218,12 +371,8 @@ export function RemotesDetailsPage() {
     const [searchTerm, setSearchTerm] = useState('')
     const [sidebarSearch, setSidebarSearch] = useState('')
     const [sidebarCompact, setSidebarCompact] = useState(false)
-    const [transferSource, setTransferSource] = useState<{
-        fs: string
-        path: string
-        name: string
-        isDir: boolean
-    } | null>(null)
+    const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false)
+    const [transferSource, setTransferSource] = useState<TransferSource | null>(null)
     const fileInputRef = useRef<HTMLInputElement>(null)
 
     const isLocalMode = location.pathname === '/local'
@@ -636,6 +785,8 @@ export function RemotesDetailsPage() {
         return data.usage
     }, [usageQuery.data])
 
+    const hasStorageTarget = isLocalMode ? !!diskPath : !!remoteName
+
     const remoteNotFound = useMemo(
         () =>
             !isLocalMode &&
@@ -814,6 +965,28 @@ export function RemotesDetailsPage() {
         ]
     )
 
+    const handleCancelTransfer = useCallback(() => {
+        const source = transferSource
+        setTransferSource(null)
+        if (!source) return
+
+        const sourceDir = source.path.split('/').slice(0, -1).join('/')
+        if (source.fs === currentFs && sourceDir === currentPath) return
+
+        const sourceIsLocal = source.fs.startsWith('/')
+        const sourcePath = sourceIsLocal
+            ? buildLocalPathHref(source.fs.replace(/\/$/, ''), sourceDir)
+            : buildRemotePathHref(source.fs.replace(/:$/, ''), sourceDir)
+
+        toast(t('remotesDetails.transferCancelled'), {
+            position: 'bottom-left',
+            action: {
+                label: t('remotesDetails.backToSource'),
+                onClick: () => navigate(sourcePath),
+            },
+        })
+    }, [transferSource, currentFs, currentPath, navigate, t])
+
     const handleUpload = useCallback(() => {
         fileInputRef.current?.click()
     }, [])
@@ -830,7 +1003,7 @@ export function RemotesDetailsPage() {
     // --- Render ---
 
     return (
-        <section className="flex h-full min-h-0 w-full overflow-hidden">
+        <section className="relative flex h-full min-h-0 w-full overflow-hidden">
             <input
                 ref={fileInputRef}
                 type="file"
@@ -839,10 +1012,31 @@ export function RemotesDetailsPage() {
                 onChange={handleFileChange}
             />
 
+            {isMobileSidebarOpen && (
+                <div
+                    className="absolute inset-0 z-20 bg-black/40 md:hidden"
+                    aria-hidden="true"
+                    onClick={() => setIsMobileSidebarOpen(false)}
+                />
+            )}
+
+            {transferSource ? (
+                <div className="absolute inset-x-0 bottom-0 z-10 border-t bg-background/95 p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] shadow-[0_-8px_24px_-16px_rgba(0,0,0,0.4)] backdrop-blur md:hidden">
+                    <TransferPanel
+                        source={transferSource}
+                        isPending={transferMutation.isPending}
+                        onCancel={handleCancelTransfer}
+                        onExecute={handleTransferExecute}
+                    />
+                </div>
+            ) : null}
+
             <aside
                 className={cn(
-                    'relative hidden shrink-0 flex-col border-r bg-background sm:flex',
-                    sidebarCompact ? 'w-48' : 'w-72'
+                    'absolute inset-y-0 left-0 z-30 flex w-72 max-w-[85vw] shrink-0 flex-col border-r bg-background shadow-xl transition-transform duration-200',
+                    'md:relative md:inset-auto md:z-auto md:max-w-none md:translate-x-0 md:shadow-none md:transition-none',
+                    sidebarCompact ? 'md:w-48' : 'md:w-72',
+                    isMobileSidebarOpen ? 'translate-x-0' : '-translate-x-full'
                 )}
             >
                 <InputGroup className="h-10 shrink-0 rounded-none border-x-0 border-t-0 !ring-0 [&]:border-x-0 [&]:border-t-0">
@@ -868,7 +1062,10 @@ export function RemotesDetailsPage() {
                     )}
                 </InputGroup>
 
-                <nav className="min-h-0 flex-1 space-y-4 overflow-y-auto p-3">
+                <nav
+                    className="min-h-0 flex-1 space-y-4 overflow-y-auto p-3"
+                    onClick={() => setIsMobileSidebarOpen(false)}
+                >
                     {filteredDisks.length > 0 && (
                         <div>
                             <h2 className="px-1 pb-2 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
@@ -949,145 +1146,36 @@ export function RemotesDetailsPage() {
                     )}
                 </nav>
 
-                <div className="border-t p-4">
+                <div className="hidden border-t p-4 md:block">
                     {transferSource ? (
-                        <Card size="sm" className="gap-0">
-                            <CardHeader className="pb-2">
-                                <div className="flex items-center justify-between gap-2">
+                        <TransferPanel
+                            source={transferSource}
+                            isPending={transferMutation.isPending}
+                            onCancel={handleCancelTransfer}
+                            onExecute={handleTransferExecute}
+                        />
+                    ) : hasStorageTarget ? (
+                        <Card size="sm" className="gap-3">
+                            <CardHeader className="pb-0">
+                                <div className="flex items-center justify-between gap-3">
                                     <CardTitle className="text-sm">
-                                        {t('remotesDetails.transfer')}
+                                        {t('remotesDetails.storageTitle')}
                                     </CardTitle>
-                                    <Button
-                                        type="button"
-                                        variant="ghost"
-                                        size="icon-xs"
-                                        aria-label={t('remotesDetails.cancelTransfer')}
-                                        onClick={() => {
-                                            const source = transferSource
-                                            setTransferSource(null)
-                                            if (source) {
-                                                const sourceDir = source.path
-                                                    .split('/')
-                                                    .slice(0, -1)
-                                                    .join('/')
-                                                if (
-                                                    source.fs !== currentFs ||
-                                                    sourceDir !== currentPath
-                                                ) {
-                                                    const sourceIsLocal = source.fs.startsWith('/')
-                                                    const sourcePath = sourceIsLocal
-                                                        ? buildLocalPathHref(
-                                                              source.fs.replace(/\/$/, ''),
-                                                              sourceDir
-                                                          )
-                                                        : buildRemotePathHref(
-                                                              source.fs.replace(/:$/, ''),
-                                                              sourceDir
-                                                          )
-                                                    toast(t('remotesDetails.transferCancelled'), {
-                                                        position: 'bottom-left',
-                                                        action: {
-                                                            label: t('remotesDetails.backToSource'),
-                                                            onClick: () => navigate(sourcePath),
-                                                        },
-                                                    })
-                                                }
-                                            }
-                                        }}
-                                    >
-                                        <XIcon className="size-3.5" />
-                                    </Button>
+                                    {usage?.percentLabel ? (
+                                        <span className="text-xs text-muted-foreground">
+                                            {usage.percentLabel}
+                                        </span>
+                                    ) : null}
                                 </div>
                             </CardHeader>
-                            <CardContent className="space-y-3">
-                                <div className="flex items-center gap-2 text-xs">
-                                    {transferSource.isDir ? (
-                                        <FolderIcon className="size-3.5 shrink-0 text-indigo-400" />
-                                    ) : (
-                                        <FileIcon className="size-3.5 shrink-0 text-muted-foreground" />
-                                    )}
-                                    <span className="truncate font-medium">
-                                        {transferSource.name}
-                                    </span>
-                                </div>
-                                <p className="text-xs text-muted-foreground">
-                                    {t('remotesDetails.transferFrom', {
-                                        remote: transferSource.fs.replace(/[/:]+$/, ''),
-                                        path:
-                                            transferSource.path.split('/').slice(0, -1).join('/') ||
-                                            '/',
-                                    })}
-                                </p>
-                                <p className="text-xs text-muted-foreground">
-                                    {t('remotesDetails.navigateToDestination')}
-                                </p>
-                                <div className="flex gap-2">
-                                    <Button
-                                        type="button"
-                                        size="xs"
-                                        variant="outline"
-                                        className="flex-1"
-                                        disabled={transferMutation.isPending}
-                                        onClick={() => handleTransferExecute('move')}
-                                    >
-                                        {t('remotesDetails.moveHere')}
-                                    </Button>
-                                    <Button
-                                        type="button"
-                                        size="xs"
-                                        className="flex-1"
-                                        disabled={transferMutation.isPending}
-                                        onClick={() => handleTransferExecute('copy')}
-                                    >
-                                        {t('remotesDetails.copyHere')}
-                                    </Button>
-                                </div>
+                            <CardContent className="space-y-2">
+                                <StorageUsageBody
+                                    usage={usage}
+                                    isPending={usageQuery.isPending}
+                                    fallbackText={t('remotesDetails.storageUnavailable')}
+                                />
                             </CardContent>
                         </Card>
-                    ) : (isLocalMode ? !!diskPath : !!remoteName) ? (
-                        usageQuery.isPending ? (
-                            <Card size="sm">
-                                <CardContent className="flex justify-center py-2">
-                                    <Spinner className="size-4" />
-                                </CardContent>
-                            </Card>
-                        ) : usage ? (
-                            <Card size="sm" className="gap-3">
-                                <CardHeader className="pb-0">
-                                    <div className="flex items-center justify-between gap-3">
-                                        <CardTitle className="text-sm">
-                                            {t('remotesDetails.storageTitle')}
-                                        </CardTitle>
-                                        {usage.percentLabel ? (
-                                            <span className="text-xs text-muted-foreground">
-                                                {usage.percentLabel}
-                                            </span>
-                                        ) : null}
-                                    </div>
-                                </CardHeader>
-                                <CardContent className="space-y-2">
-                                    <Progress value={usage.barPercent ?? 50} />
-                                    <p className="text-xs text-muted-foreground">
-                                        {usage.totalLabel
-                                            ? t('remotesDetails.storageUsedOf', {
-                                                  used: usage.usedLabel,
-                                                  total: usage.totalLabel,
-                                              })
-                                            : t('remotesDetails.storageUsed', {
-                                                  used: usage.usedLabel,
-                                              })}
-                                    </p>
-                                </CardContent>
-                            </Card>
-                        ) : (
-                            <Card size="sm">
-                                <CardContent>
-                                    <p className="text-xs text-muted-foreground">
-                                        {t('remotesDetails.storageUnavailable')}
-                                    </p>
-                                </CardContent>
-                            </Card>
-                        )
                     ) : (
                         <Card size="sm">
                             <CardContent>
@@ -1101,14 +1189,19 @@ export function RemotesDetailsPage() {
                 <button
                     type="button"
                     aria-label="Toggle sidebar width"
-                    className="absolute top-0 right-0 h-full w-1.5 cursor-pointer border-0 bg-transparent transition-colors hover:bg-ring/50"
+                    className="absolute top-0 right-0 hidden h-full w-1.5 cursor-pointer border-0 bg-transparent transition-colors hover:bg-ring/50 md:block"
                     onClick={() => setSidebarCompact((prev) => !prev)}
                 />
             </aside>
 
-            <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
+            <div
+                className={cn(
+                    'flex min-h-0 flex-1 flex-col overflow-y-auto',
+                    transferSource && 'pb-48 md:pb-0'
+                )}
+            >
                 {remoteNotFound ? (
-                    <div className="border-b px-6 py-4">
+                    <div className="border-b px-3 py-4 sm:px-6">
                         <p className="text-2xl font-semibold tracking-tight">
                             {t('remotesDetails.notFoundTitle')}
                         </p>
@@ -1117,51 +1210,64 @@ export function RemotesDetailsPage() {
                         </p>
                     </div>
                 ) : canBrowse ? (
-                    <div className="sticky top-0 z-10 border-b bg-background px-6 py-4 space-y-3">
-                        <Breadcrumb>
-                            <BreadcrumbList>
-                                <BreadcrumbItem>
-                                    <Link
-                                        to={
-                                            isLocalMode
-                                                ? buildLocalPathHref(diskPath, '')
-                                                : buildRemotePathHref(remoteName, '')
-                                        }
-                                        className="inline-flex items-center transition-colors hover:text-foreground"
-                                    >
-                                        <HouseIcon className="size-3.5" />
-                                    </Link>
-                                </BreadcrumbItem>
+                    <div className="sticky top-0 z-10 space-y-3 border-b bg-background px-3 py-3 sm:px-6 sm:py-4">
+                        <div className="flex items-center gap-2">
+                            <Button
+                                type="button"
+                                variant="outline"
+                                size="icon-sm"
+                                className="shrink-0 md:hidden"
+                                aria-label={t('remotesDetails.sidebarLocal')}
+                                aria-expanded={isMobileSidebarOpen}
+                                onClick={() => setIsMobileSidebarOpen(true)}
+                            >
+                                <PanelLeftIcon className="size-4" />
+                            </Button>
+                            <Breadcrumb className="min-w-0 flex-1">
+                                <BreadcrumbList>
+                                    <BreadcrumbItem>
+                                        <Link
+                                            to={
+                                                isLocalMode
+                                                    ? buildLocalPathHref(diskPath, '')
+                                                    : buildRemotePathHref(remoteName, '')
+                                            }
+                                            className="inline-flex items-center transition-colors hover:text-foreground"
+                                        >
+                                            <HouseIcon className="size-3.5" />
+                                        </Link>
+                                    </BreadcrumbItem>
 
-                                {breadcrumbItems.map((item, index) => (
-                                    <Fragment key={item.path}>
-                                        <BreadcrumbSeparator />
-                                        <BreadcrumbItem>
-                                            {index === breadcrumbItems.length - 1 ? (
-                                                <BreadcrumbPage>{item.label}</BreadcrumbPage>
-                                            ) : (
-                                                <Link
-                                                    to={
-                                                        isLocalMode
-                                                            ? buildLocalPathHref(
-                                                                  diskPath,
-                                                                  item.path
-                                                              )
-                                                            : buildRemotePathHref(
-                                                                  remoteName,
-                                                                  item.path
-                                                              )
-                                                    }
-                                                    className="transition-colors hover:text-foreground"
-                                                >
-                                                    {item.label}
-                                                </Link>
-                                            )}
-                                        </BreadcrumbItem>
-                                    </Fragment>
-                                ))}
-                            </BreadcrumbList>
-                        </Breadcrumb>
+                                    {breadcrumbItems.map((item, index) => (
+                                        <Fragment key={item.path}>
+                                            <BreadcrumbSeparator />
+                                            <BreadcrumbItem>
+                                                {index === breadcrumbItems.length - 1 ? (
+                                                    <BreadcrumbPage>{item.label}</BreadcrumbPage>
+                                                ) : (
+                                                    <Link
+                                                        to={
+                                                            isLocalMode
+                                                                ? buildLocalPathHref(
+                                                                      diskPath,
+                                                                      item.path
+                                                                  )
+                                                                : buildRemotePathHref(
+                                                                      remoteName,
+                                                                      item.path
+                                                                  )
+                                                        }
+                                                        className="transition-colors hover:text-foreground"
+                                                    >
+                                                        {item.label}
+                                                    </Link>
+                                                )}
+                                            </BreadcrumbItem>
+                                        </Fragment>
+                                    ))}
+                                </BreadcrumbList>
+                            </Breadcrumb>
+                        </div>
 
                         <div className="flex flex-wrap items-center gap-2">
                             <InputGroup className="min-w-0 flex-1 basis-48">
@@ -1175,7 +1281,7 @@ export function RemotesDetailsPage() {
                                     aria-label="Search files and folders"
                                 />
                             </InputGroup>
-                            <div className="flex items-center gap-2">
+                            <div className="flex flex-wrap items-center gap-2">
                                 <Button
                                     type="button"
                                     onClick={handleNewFolder}
@@ -1203,6 +1309,48 @@ export function RemotesDetailsPage() {
                                     refetch={listQuery.refetch}
                                 />
                             </div>
+                            {hasStorageTarget ? (
+                                <Popover>
+                                    <PopoverTrigger
+                                        render={
+                                            <Button
+                                                type="button"
+                                                variant="outline"
+                                                className="ml-auto shrink-0 md:hidden"
+                                                aria-label={t('remotesDetails.storageTitle')}
+                                            >
+                                                <HardDriveIcon />
+                                                {usage?.percentLabel ? (
+                                                    <span className="tabular-nums">
+                                                        {usage.percentLabel}
+                                                    </span>
+                                                ) : null}
+                                            </Button>
+                                        }
+                                    />
+                                    <PopoverContent align="end" className="w-64">
+                                        <div className="flex items-center justify-between gap-3">
+                                            <span className="font-medium">
+                                                {t('remotesDetails.storageTitle')}
+                                            </span>
+                                            {usage?.percentLabel ? (
+                                                <span className="text-xs text-muted-foreground">
+                                                    {usage.percentLabel}
+                                                </span>
+                                            ) : null}
+                                        </div>
+                                        <div className="space-y-2">
+                                            <StorageUsageBody
+                                                usage={usage}
+                                                isPending={usageQuery.isPending}
+                                                fallbackText={t(
+                                                    'remotesDetails.storageUnavailable'
+                                                )}
+                                            />
+                                        </div>
+                                    </PopoverContent>
+                                </Popover>
+                            ) : null}
                         </div>
                     </div>
                 ) : null}
@@ -1257,7 +1405,7 @@ export function RemotesDetailsPage() {
                             </Alert>
                         </div>
                     ) : (
-                        <div className="mt-6">
+                        <div className="mt-4 sm:mt-6">
                             <div className="overflow-hidden rounded-xl border">
                                 <Table className="table-fixed">
                                     <TableHeader className="bg-muted/40">
@@ -1265,14 +1413,16 @@ export function RemotesDetailsPage() {
                                             <TableHead className="px-2 font-semibold text-muted-foreground uppercase">
                                                 {t('remotesDetails.name')}
                                             </TableHead>
-                                            <TableHead className="w-24 px-4 font-semibold text-muted-foreground uppercase">
+                                            <TableHead className="w-14 px-2 font-semibold text-muted-foreground uppercase sm:w-20 sm:px-4">
                                                 {t('remotesDetails.size')}
                                             </TableHead>
-                                            <TableHead className="w-36 px-4 font-semibold text-muted-foreground uppercase">
+                                            <TableHead className="hidden w-36 px-4 font-semibold text-muted-foreground uppercase sm:table-cell">
                                                 {t('remotesDetails.modified')}
                                             </TableHead>
-                                            <TableHead className="w-36 px-4 text-right font-semibold text-muted-foreground uppercase">
-                                                {t('common.actions')}
+                                            <TableHead className="w-12 px-2 text-right font-semibold text-muted-foreground uppercase sm:w-36 sm:px-4">
+                                                <span className="hidden sm:inline">
+                                                    {t('common.actions')}
+                                                </span>
                                             </TableHead>
                                         </TableRow>
                                     </TableHeader>
@@ -1333,41 +1483,143 @@ export function RemotesDetailsPage() {
                                                                     }
                                                                     className="flex max-w-full items-center gap-3 rounded-md px-1 py-1 pr-2.5 -translate-x-1 text-left transition-colors hover:bg-muted"
                                                                 >
-                                                                    <span className="inline-flex size-10 shrink-0 items-center justify-center rounded-md bg-indigo-500/10 text-indigo-600">
+                                                                    <span className="inline-flex size-8 shrink-0 items-center justify-center rounded-md bg-indigo-500/10 text-indigo-600 sm:size-10">
                                                                         <FolderIcon />
                                                                     </span>
-                                                                    <span className="truncate font-medium">
-                                                                        {item.Name}
+                                                                    <span className="flex min-w-0 flex-col">
+                                                                        <span className="truncate font-medium">
+                                                                            {item.Name}
+                                                                        </span>
+                                                                        <span className="truncate text-xs text-muted-foreground sm:hidden">
+                                                                            {formatModTime(
+                                                                                item.ModTime
+                                                                            )}
+                                                                        </span>
                                                                     </span>
                                                                 </button>
                                                             ) : (
                                                                 <div className="flex max-w-full items-center gap-3">
                                                                     <span
                                                                         className={cn(
-                                                                            'inline-flex size-10 shrink-0 items-center justify-center rounded-md',
+                                                                            'inline-flex size-8 shrink-0 items-center justify-center rounded-md sm:size-10',
                                                                             fileTypeUi.className
                                                                         )}
                                                                     >
                                                                         <FileTypeIcon />
                                                                     </span>
-                                                                    <span className="truncate font-medium">
-                                                                        {item.Name}
+                                                                    <span className="flex min-w-0 flex-col">
+                                                                        <span className="truncate font-medium">
+                                                                            {item.Name}
+                                                                        </span>
+                                                                        <span className="truncate text-xs text-muted-foreground sm:hidden">
+                                                                            {formatModTime(
+                                                                                item.ModTime
+                                                                            )}
+                                                                        </span>
                                                                     </span>
                                                                 </div>
                                                             )}
                                                         </TableCell>
 
-                                                        <TableCell className="px-4 py-3 font-medium text-muted-foreground">
+                                                        <TableCell className="px-2 py-3 font-medium text-muted-foreground sm:px-4">
                                                             {item.IsDir
                                                                 ? '--'
                                                                 : formatBytes(item.Size)}
                                                         </TableCell>
-                                                        <TableCell className="px-4 py-3 font-medium text-muted-foreground">
-                                                            {formatModTime(item.ModTime)}
+                                                        <TableCell className="hidden px-4 py-3 sm:table-cell">
+                                                            <ModTimeCell modTime={item.ModTime} />
                                                         </TableCell>
 
-                                                        <TableCell className="px-4 py-3">
-                                                            <div className="flex justify-end gap-1 opacity-0 transition-opacity group-hover/row:opacity-100 group-focus-within/row:opacity-100">
+                                                        <TableCell className="px-2 py-3 sm:px-4">
+                                                            <div className="flex justify-end sm:hidden">
+                                                                <DropdownMenu>
+                                                                    <DropdownMenuTrigger
+                                                                        render={
+                                                                            <Button
+                                                                                type="button"
+                                                                                variant="ghost"
+                                                                                size="icon-sm"
+                                                                                aria-label={t(
+                                                                                    'common.actions'
+                                                                                )}
+                                                                            >
+                                                                                <EllipsisVerticalIcon className="size-4" />
+                                                                            </Button>
+                                                                        }
+                                                                    />
+                                                                    <DropdownMenuContent
+                                                                        align="end"
+                                                                        className="w-44"
+                                                                    >
+                                                                        <DropdownMenuItem
+                                                                            disabled={isMutating}
+                                                                            onClick={() =>
+                                                                                handleTransfer(
+                                                                                    item
+                                                                                )
+                                                                            }
+                                                                        >
+                                                                            <SendIcon className="size-4" />
+                                                                            {t(
+                                                                                'remotesDetails.transfer'
+                                                                            )}
+                                                                        </DropdownMenuItem>
+                                                                        <DropdownMenuItem
+                                                                            disabled={
+                                                                                isMutating ||
+                                                                                !!transferSource
+                                                                            }
+                                                                            onClick={() =>
+                                                                                handleDownload(
+                                                                                    item
+                                                                                )
+                                                                            }
+                                                                        >
+                                                                            <DownloadIcon className="size-4" />
+                                                                            {item.IsDir
+                                                                                ? t(
+                                                                                      'remotesDetails.downloadZip'
+                                                                                  )
+                                                                                : t(
+                                                                                      'remotesDetails.download'
+                                                                                  )}
+                                                                        </DropdownMenuItem>
+                                                                        <DropdownMenuItem
+                                                                            disabled={
+                                                                                isMutating ||
+                                                                                !!transferSource
+                                                                            }
+                                                                            onClick={() =>
+                                                                                handleRename(
+                                                                                    item
+                                                                                )
+                                                                            }
+                                                                        >
+                                                                            <PencilIcon className="size-4" />
+                                                                            {t(
+                                                                                'remotesDetails.rename'
+                                                                            )}
+                                                                        </DropdownMenuItem>
+                                                                        <DropdownMenuSeparator />
+                                                                        <DropdownMenuItem
+                                                                            variant="destructive"
+                                                                            disabled={
+                                                                                isMutating ||
+                                                                                !!transferSource
+                                                                            }
+                                                                            onClick={() =>
+                                                                                handleDelete(
+                                                                                    item
+                                                                                )
+                                                                            }
+                                                                        >
+                                                                            <TrashIcon className="size-4" />
+                                                                            {t('common.delete')}
+                                                                        </DropdownMenuItem>
+                                                                    </DropdownMenuContent>
+                                                                </DropdownMenu>
+                                                            </div>
+                                                            <div className="hidden justify-end gap-1 sm:flex sm:opacity-0 sm:transition-opacity sm:group-hover/row:opacity-100 sm:group-focus-within/row:opacity-100">
                                                                 <div className="hidden sm:block">
                                                                     <Tooltip>
                                                                         <TooltipTrigger
@@ -1493,6 +1745,10 @@ export function RemotesDetailsPage() {
                         </div>
                     )}
                 </PageContent>
+
+                {transferSource ? (
+                    <div className="h-32 shrink-0 md:hidden" aria-hidden="true" />
+                ) : null}
             </div>
         </section>
     )

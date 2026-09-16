@@ -148,7 +148,7 @@ export function MountsPage() {
                 ) : null}
 
                 {mounts.length > 0 ? (
-                    <div className="grid gap-6 grid-cols-[repeat(auto-fill,minmax(320px,1fr))]">
+                    <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,320px),1fr))] gap-4 sm:gap-6">
                         {mounts.map((mount) => (
                             <Card key={mount.MountPoint}>
                                 <CardHeader className="border-b">

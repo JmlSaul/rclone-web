@@ -29,6 +29,7 @@
     "common.moreOptions": "Más opciones",
     "common.noRemotesCombobox": "No se encontraron remotos.",
     "common.noRemotesTitle": "No se encontraron remotos",
+    "common.refresh": "Actualizar",
     "common.remote": "remoto",
     "common.remoteRequired": "El remoto es obligatorio.",
     "common.reset": "Restablecer",
@@ -336,6 +337,7 @@
     "transfersTable.destination": "DESTINO",
     "transfersTable.eta": "ETA",
     "transfersTable.failed": "FALLIDO",
+    "transfersTable.failureReason": "Motivo del fallo",
     "transfersTable.group": "GRUPO",
     "transfersTable.progress": "PROGRESO",
     "transfersTable.running": "EN CURSO",
@@ -345,5 +347,7 @@
     "app.settingsTitle": "Ajustes",
     "app.themeSection": "Tema",
     "app.darkMode": "Modo oscuro",
-    "app.languageSection": "Idioma"
+    "app.languageSection": "Idioma",
+    "app.menu": "Menú",
+    "app.appearance": "Apariencia"
 }

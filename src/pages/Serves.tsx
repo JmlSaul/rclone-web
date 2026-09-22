@@ -102,25 +102,25 @@ export function ServesPage() {
                         <Table>
                             <TableHeader className="bg-muted/40">
                                 <TableRow className="hover:bg-muted/40">
-                                    <TableHead className="h-14 px-4 font-semibold text-muted-foreground uppercase">
+                                    <TableHead className="hidden h-14 px-4 font-semibold text-muted-foreground uppercase sm:table-cell">
                                         {t('serves.id')}
                                     </TableHead>
-                                    <TableHead className="h-14 px-6 font-semibold text-muted-foreground uppercase">
+                                    <TableHead className="h-14 px-3 font-semibold text-muted-foreground uppercase sm:px-6">
                                         {t('serves.remote')}
                                     </TableHead>
-                                    <TableHead className="h-14 px-4 font-semibold text-muted-foreground uppercase">
+                                    <TableHead className="hidden h-14 px-4 font-semibold text-muted-foreground uppercase md:table-cell">
                                         {t('serves.source')}
                                     </TableHead>
-                                    <TableHead className="h-14 px-4 font-semibold text-muted-foreground uppercase">
+                                    <TableHead className="h-14 px-3 font-semibold text-muted-foreground uppercase sm:px-4">
                                         {t('serves.protocol')}
                                     </TableHead>
-                                    <TableHead className="h-14 px-4 font-semibold text-muted-foreground uppercase">
+                                    <TableHead className="h-14 px-3 font-semibold text-muted-foreground uppercase sm:px-4">
                                         {t('serves.address')}
                                     </TableHead>
-                                    <TableHead className="h-14 px-4 font-semibold text-muted-foreground uppercase">
+                                    <TableHead className="hidden h-14 px-4 font-semibold text-muted-foreground uppercase sm:table-cell">
                                         {t('serves.auth')}
                                     </TableHead>
-                                    <TableHead className="h-14 px-4 text-right font-semibold text-muted-foreground uppercase">
+                                    <TableHead className="h-14 px-3 text-right font-semibold text-muted-foreground uppercase sm:px-4">
                                         {t('common.actions')}
                                     </TableHead>
                                 </TableRow>
@@ -181,25 +181,25 @@ export function ServesPage() {
                         <Table>
                             <TableHeader className="bg-muted/40">
                                 <TableRow className="hover:bg-muted/40">
-                                    <TableHead className="h-14 px-4 font-semibold text-muted-foreground uppercase">
+                                    <TableHead className="hidden h-14 px-4 font-semibold text-muted-foreground uppercase sm:table-cell">
                                         {t('serves.id')}
                                     </TableHead>
-                                    <TableHead className="h-14 px-6 font-semibold text-muted-foreground uppercase">
+                                    <TableHead className="h-14 px-3 font-semibold text-muted-foreground uppercase sm:px-6">
                                         {t('serves.remote')}
                                     </TableHead>
-                                    <TableHead className="h-14 px-4 font-semibold text-muted-foreground uppercase">
+                                    <TableHead className="hidden h-14 px-4 font-semibold text-muted-foreground uppercase md:table-cell">
                                         {t('serves.source')}
                                     </TableHead>
-                                    <TableHead className="h-14 px-4 font-semibold text-muted-foreground uppercase">
+                                    <TableHead className="h-14 px-3 font-semibold text-muted-foreground uppercase sm:px-4">
                                         {t('serves.protocol')}
                                     </TableHead>
-                                    <TableHead className="h-14 px-4 font-semibold text-muted-foreground uppercase">
+                                    <TableHead className="h-14 px-3 font-semibold text-muted-foreground uppercase sm:px-4">
                                         {t('serves.address')}
                                     </TableHead>
-                                    <TableHead className="h-14 px-4 font-semibold text-muted-foreground uppercase">
+                                    <TableHead className="hidden h-14 px-4 font-semibold text-muted-foreground uppercase sm:table-cell">
                                         {t('serves.auth')}
                                     </TableHead>
-                                    <TableHead className="h-14 px-4 text-right font-semibold text-muted-foreground uppercase">
+                                    <TableHead className="h-14 px-3 text-right font-semibold text-muted-foreground uppercase sm:px-4">
                                         {t('common.actions')}
                                     </TableHead>
                                 </TableRow>
@@ -208,25 +208,25 @@ export function ServesPage() {
                             <TableBody>
                                 {serves.map((serve) => (
                                     <TableRow key={serve.id} className="hover:bg-muted/20">
-                                        <TableCell className="px-4 py-4 font-mono text-sm">
+                                        <TableCell className="hidden px-4 py-3 font-mono text-sm sm:table-cell sm:py-4">
                                             {serve.id}
                                         </TableCell>
-                                        <TableCell className="px-6 py-4 text-base font-medium">
+                                        <TableCell className="px-3 py-3 text-base font-medium sm:px-6 sm:py-4">
                                             {serve.remoteName}
                                         </TableCell>
-                                        <TableCell className="px-4 py-4 font-mono text-sm">
+                                        <TableCell className="hidden px-4 py-3 font-mono text-sm md:table-cell md:py-4">
                                             {serve.source || '-'}
                                         </TableCell>
-                                        <TableCell className="px-4 py-4 uppercase">
+                                        <TableCell className="px-3 py-3 uppercase sm:px-4 sm:py-4">
                                             {serve.protocol}
                                         </TableCell>
-                                        <TableCell className="px-4 py-4 font-mono">
+                                        <TableCell className="px-3 py-3 font-mono sm:px-4 sm:py-4">
                                             {serve.address}
                                         </TableCell>
-                                        <TableCell className="px-4 py-4 uppercase">
+                                        <TableCell className="hidden px-4 py-3 uppercase sm:table-cell sm:py-4">
                                             {serve.auth}
                                         </TableCell>
-                                        <TableCell className="px-4 py-4 text-right">
+                                        <TableCell className="px-3 py-3 text-right sm:px-4 sm:py-4">
                                             <Button
                                                 type="button"
                                                 size="sm"

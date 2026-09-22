@@ -29,6 +29,7 @@
     "common.moreOptions": "More Options",
     "common.noRemotesCombobox": "No remotes found.",
     "common.noRemotesTitle": "No remotes found",
+    "common.refresh": "Refresh",
     "common.remote": "remote",
     "common.remoteRequired": "Remote is required.",
     "common.reset": "Reset",
@@ -336,6 +337,7 @@
     "transfersTable.destination": "DESTINATION",
     "transfersTable.eta": "ETA",
     "transfersTable.failed": "FAILED",
+    "transfersTable.failureReason": "Failure reason",
     "transfersTable.group": "GROUP",
     "transfersTable.progress": "PROGRESS",
     "transfersTable.running": "RUNNING",
@@ -345,5 +347,7 @@
     "app.settingsTitle": "Settings",
     "app.themeSection": "Theme",
     "app.darkMode": "Dark Mode",
-    "app.languageSection": "Language"
+    "app.languageSection": "Language",
+    "app.menu": "Menu",
+    "app.appearance": "Appearance"
 }

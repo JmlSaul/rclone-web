@@ -29,6 +29,7 @@
     "common.moreOptions": "更多选项",
     "common.noRemotesCombobox": "未找到远程存储。",
     "common.noRemotesTitle": "未找到远程存储",
+    "common.refresh": "刷新",
     "common.remote": "远程存储",
     "common.remoteRequired": "远程存储为必填项。",
     "common.reset": "重置",
@@ -336,6 +337,7 @@
     "transfersTable.destination": "目标",
     "transfersTable.eta": "ETA",
     "transfersTable.failed": "已失败",
+    "transfersTable.failureReason": "失败原因",
     "transfersTable.group": "分组",
     "transfersTable.progress": "进度",
     "transfersTable.running": "运行中",
@@ -345,5 +347,7 @@
     "app.settingsTitle": "设置",
     "app.themeSection": "主题",
     "app.darkMode": "深色模式",
-    "app.languageSection": "语言"
+    "app.languageSection": "语言",
+    "app.menu": "菜单",
+    "app.appearance": "外观"
 }

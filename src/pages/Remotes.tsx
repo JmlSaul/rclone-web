@@ -97,12 +97,12 @@ export function RemotesPage() {
                 title={t('remotes.title')}
                 description={t('remotes.description')}
                 actions={
-                    <div className="flex items-center gap-2">
+                    <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto sm:flex-nowrap">
                         <Input
                             placeholder={t('remotes.searchPlaceholder')}
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
-                            className="w-56"
+                            className="w-full min-w-0 sm:w-56"
                         />
                         <Button size="lg" type="button" onClick={() => navigate('/remotes/new')}>
                             <PlusIcon />
@@ -122,16 +122,16 @@ export function RemotesPage() {
                         <Table>
                             <TableHeader className="bg-muted/40">
                                 <TableRow className="hover:bg-muted/40">
-                                    <TableHead className="px-6 font-semibold uppercase h-14 text-muted-foreground">
+                                    <TableHead className="px-3 font-semibold uppercase h-14 text-muted-foreground sm:px-6">
                                         {t('remotes.name')}
                                     </TableHead>
-                                    <TableHead className="px-4 font-semibold uppercase h-14 text-muted-foreground">
+                                    <TableHead className="hidden px-4 font-semibold uppercase h-14 text-muted-foreground sm:table-cell">
                                         {t('remotes.type')}
                                     </TableHead>
-                                    <TableHead className="px-4 font-semibold uppercase h-14 text-muted-foreground">
+                                    <TableHead className="px-3 font-semibold uppercase h-14 text-muted-foreground sm:px-4">
                                         {t('remotes.usage')}
                                     </TableHead>
-                                    <TableHead className="px-4 font-semibold text-right uppercase h-14 text-muted-foreground">
+                                    <TableHead className="px-3 font-semibold text-right uppercase h-14 text-muted-foreground sm:px-4">
                                         {t('common.actions')}
                                     </TableHead>
                                 </TableRow>
@@ -192,16 +192,16 @@ export function RemotesPage() {
                         <Table>
                             <TableHeader className="bg-muted/40">
                                 <TableRow className="hover:bg-muted/40">
-                                    <TableHead className="px-6 font-semibold uppercase h-14 text-muted-foreground">
+                                    <TableHead className="px-3 font-semibold uppercase h-14 text-muted-foreground sm:px-6">
                                         {t('remotes.name')}
                                     </TableHead>
-                                    <TableHead className="px-4 font-semibold uppercase h-14 text-muted-foreground">
+                                    <TableHead className="hidden px-4 font-semibold uppercase h-14 text-muted-foreground sm:table-cell">
                                         {t('remotes.type')}
                                     </TableHead>
-                                    <TableHead className="px-4 font-semibold uppercase h-14 text-muted-foreground">
+                                    <TableHead className="px-3 font-semibold uppercase h-14 text-muted-foreground sm:px-4">
                                         {t('remotes.usage')}
                                     </TableHead>
-                                    <TableHead className="px-4 font-semibold text-right uppercase h-14 text-muted-foreground">
+                                    <TableHead className="px-3 font-semibold text-right uppercase h-14 text-muted-foreground sm:px-4">
                                         {t('common.actions')}
                                     </TableHead>
                                 </TableRow>
@@ -214,25 +214,25 @@ export function RemotesPage() {
                                         className="hover:bg-muted/20"
                                         onClick={() => navigate(`/remotes/${remote.name}`)}
                                     >
-                                        <TableCell className="px-6 py-6">
+                                        <TableCell className="px-3 py-4 sm:px-6 sm:py-6">
                                             <Link
                                                 to={`/remotes/${remote.name}`}
                                                 className="inline-flex cursor-pointer rounded-md outline-none group focus-visible:ring-2 focus-visible:ring-ring"
                                                 onClick={(e) => e.stopPropagation()}
                                             >
-                                                <span className="text-lg font-semibold group-hover:text-primary">
+                                                <span className="text-base font-semibold group-hover:text-primary sm:text-lg">
                                                     {remote.name}
                                                 </span>
                                             </Link>
                                         </TableCell>
 
-                                        <TableCell className="px-4 py-6">
+                                        <TableCell className="hidden px-4 py-4 sm:table-cell sm:py-6">
                                             <span className="font-mono text-base text-muted-foreground">
                                                 {remote.type}
                                             </span>
                                         </TableCell>
 
-                                        <TableCell className="px-4 py-6">
+                                        <TableCell className="px-3 py-4 sm:px-4 sm:py-6">
                                             <UsageCell
                                                 status={usageByName.get(remote.name)?.data}
                                                 isLoading={
@@ -242,7 +242,7 @@ export function RemotesPage() {
                                         </TableCell>
 
                                         <TableCell
-                                            className="px-4 py-6"
+                                            className="px-3 py-4 sm:px-4 sm:py-6"
                                             onClick={(e) => e.stopPropagation()}
                                         >
                                             <div className="flex items-center justify-end gap-1">
@@ -329,7 +329,7 @@ function UsageCell({ status, isLoading }: { status: UsageStatus | undefined; isL
     switch (status.state) {
         case 'success':
             return (
-                <div className="w-[240px] space-y-2">
+                <div className="w-full max-w-[190px] space-y-2 sm:w-[240px] sm:max-w-none">
                     <div className="flex items-center justify-between gap-4">
                         <span className="font-mono text-sm text-muted-foreground">
                             {status.usage.totalLabel

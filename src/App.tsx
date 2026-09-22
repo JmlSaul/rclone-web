@@ -1,8 +1,18 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { CheckIcon, LogOutIcon, MoonIcon, ScreenShareIcon, SunIcon } from 'lucide-react'
+import {
+    CheckIcon,
+    LogOutIcon,
+    MenuIcon,
+    MoonIcon,
+    RefreshCwIcon,
+    ScreenShareIcon,
+    SettingsIcon,
+    SunIcon,
+} from 'lucide-react'
 import { useCallback, useMemo, useRef, useState } from 'react'
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
+import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Separator } from '@/components/ui/separator'
 import { Switch } from '@/components/ui/switch'
@@ -50,6 +60,14 @@ export function App() {
         [location.pathname]
     )
 
+    const currentTitleKey = useMemo<TranslationKey | undefined>(() => {
+        if (location.pathname === '/') return 'nav.dashboard'
+        if (isExploreActive) return 'nav.explore'
+        return navItems.find((item) =>
+            item.end ? location.pathname === item.to : location.pathname.startsWith(item.to)
+        )?.key
+    }, [location.pathname, isExploreActive])
+
     const handleExit = useCallback(() => {
         clearAuthSession()
         navigate('/login', { replace: true })
@@ -83,6 +101,7 @@ export function App() {
     const longPressTimerRef = useRef<number | null>(null)
     const longPressFiredRef = useRef(false)
     const [isSettingsDialogOpen, setIsSettingsDialogOpen] = useState(false)
+    const [isMobileNavOpen, setIsMobileNavOpen] = useState(false)
     const [isDarkMode, setIsDarkMode] = useState(() =>
         document.documentElement.classList.contains('dark')
     )
@@ -128,11 +147,11 @@ export function App() {
     return (
         <div className="flex h-dvh min-h-screen flex-col overflow-hidden overscroll-none bg-background text-foreground">
             <header className="sticky top-0 z-10 border-b bg-background/95">
-                <div className="mx-auto flex items-center gap-4 px-4 py-4 sm:px-6">
+                <div className="mx-auto flex items-center gap-2 px-3 py-3 sm:gap-4 sm:px-6 sm:py-4">
                     {/* biome-ignore lint/a11y/noStaticElementInteractions: logo shortcut to settings; settings remain reachable via normal navigation. TODO: promote to a real button. */}
                     <img
                         alt=""
-                        className="size-6 select-none"
+                        className="size-6 shrink-0 select-none"
                         src="/icon.svg"
                         draggable={false}
                         onPointerDown={startLongPress}
@@ -154,7 +173,10 @@ export function App() {
                             setIsSettingsDialogOpen(true)
                         }}
                     />
-                    <nav className="flex">
+                    <span className="min-w-0 truncate text-sm font-semibold md:hidden">
+                        {currentTitleKey ? t(currentTitleKey) : ''}
+                    </span>
+                    <nav className="hidden md:flex">
                         <NavLink
                             end
                             to="/"
@@ -191,17 +213,30 @@ export function App() {
                             </NavLink>
                         ))}
                     </nav>
-                    <div className="ml-auto flex items-center gap-2">
+                    <div className="ml-auto flex items-center gap-1 sm:gap-2">
                         {latestVersion && (
                             <button
                                 type="button"
                                 onClick={() => handleRcloneUpdate()}
                                 disabled={updateMutation.isPending}
-                                className="px-3 py-1.5 text-sm text-blue-800 transition-colors hover:bg-muted hover:text-blue-700 disabled:opacity-50"
+                                aria-label={
+                                    updateMutation.isPending
+                                        ? t('app.updating')
+                                        : t('app.updateAvailable')
+                                }
+                                className="inline-flex cursor-pointer items-center gap-1.5 px-2.5 py-1.5 text-sm text-blue-800 transition-colors hover:bg-muted hover:text-blue-700 disabled:opacity-50 sm:px-3"
                             >
-                                {updateMutation.isPending
-                                    ? t('app.updating')
-                                    : t('app.updateAvailable')}
+                                <RefreshCwIcon
+                                    className={cn(
+                                        'size-4 md:hidden',
+                                        updateMutation.isPending && 'animate-spin'
+                                    )}
+                                />
+                                <span className="hidden md:inline">
+                                    {updateMutation.isPending
+                                        ? t('app.updating')
+                                        : t('app.updateAvailable')}
+                                </span>
                             </button>
                         )}
                         {hasAuthCredentials && (
@@ -209,12 +244,23 @@ export function App() {
                                 type="button"
                                 onClick={handleExit}
                                 aria-label={t('app.logOut')}
-                                className="inline-flex cursor-pointer items-center gap-1.5 px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:text-red-600"
+                                className="hidden cursor-pointer items-center gap-1.5 px-2.5 py-1.5 text-sm text-muted-foreground transition-colors hover:text-red-600 sm:px-3 md:inline-flex"
                             >
                                 <LogOutIcon className="size-4" />
                                 {/* Log out */}
                             </button>
                         )}
+                        <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon-lg"
+                            className="md:hidden"
+                            aria-label={t('app.menu')}
+                            aria-expanded={isMobileNavOpen}
+                            onClick={() => setIsMobileNavOpen(true)}
+                        >
+                            <MenuIcon className="size-5" />
+                        </Button>
                     </div>
                 </div>
             </header>
@@ -223,7 +269,7 @@ export function App() {
                 <Outlet />
 
                 {footerMessageKey ? (
-                    <footer className="mt-auto group shrink-0 px-6 py-4 text-center text-sm text-muted-foreground flex justify-center gap-1.5 items-center">
+                    <footer className="mt-auto group shrink-0 px-4 py-4 text-center text-sm text-muted-foreground flex justify-center gap-1.5 items-center sm:px-6">
                         <a
                             href="https://rcloneui.com/web"
                             target="_blank"
@@ -282,7 +328,117 @@ export function App() {
                     </div>
                 </DialogContent>
             </Dialog>
+
+            <MobileNavDialog
+                open={isMobileNavOpen}
+                onOpenChange={setIsMobileNavOpen}
+                isExploreActive={isExploreActive}
+                onOpenSettings={() => setIsSettingsDialogOpen(true)}
+                showLogout={hasAuthCredentials}
+                onLogout={handleExit}
+            />
         </div>
+    )
+}
+
+function MobileNavDialog({
+    open,
+    onOpenChange,
+    isExploreActive,
+    onOpenSettings,
+    showLogout,
+    onLogout,
+}: {
+    open: boolean
+    onOpenChange: (open: boolean) => void
+    isExploreActive: boolean
+    onOpenSettings: () => void
+    showLogout: boolean
+    onLogout: () => void
+}) {
+    const t = useT()
+    const baseLinkClassName =
+        'flex items-center rounded-lg px-3 py-2.5 text-sm font-medium transition-colors'
+    const activeLinkClassName = 'bg-muted text-foreground'
+    const inactiveLinkClassName = 'text-muted-foreground hover:bg-muted/70 hover:text-foreground'
+    const resolveLinkClassName = (isActive: boolean) =>
+        cn(baseLinkClassName, isActive ? activeLinkClassName : inactiveLinkClassName)
+
+    return (
+        <Dialog open={open} onOpenChange={onOpenChange}>
+            <DialogContent className="top-0 left-0 flex h-dvh max-h-dvh w-72 max-w-[85vw] translate-x-0 translate-y-0 flex-col gap-1 rounded-none border-r p-3 sm:max-w-[85vw]">
+                <DialogHeader>
+                    <DialogTitle>{t('app.menu')}</DialogTitle>
+                </DialogHeader>
+
+                <nav className="flex flex-col gap-1">
+                    <NavLink
+                        end
+                        to="/"
+                        className={({ isActive }) => resolveLinkClassName(isActive)}
+                        onClick={() => onOpenChange(false)}
+                    >
+                        {t('nav.dashboard')}
+                    </NavLink>
+                    <NavLink
+                        to="/local"
+                        className={() => resolveLinkClassName(isExploreActive)}
+                        onClick={() => onOpenChange(false)}
+                    >
+                        {t('nav.explore')}
+                    </NavLink>
+                    {navItems.map((item) => (
+                        <NavLink
+                            key={item.to}
+                            end={item.end}
+                            to={item.to}
+                            className={({ isActive }) => resolveLinkClassName(isActive)}
+                            onClick={() => onOpenChange(false)}
+                        >
+                            {t(item.key)}
+                        </NavLink>
+                    ))}
+                </nav>
+
+                <Separator className="!my-2" />
+
+                <button
+                    type="button"
+                    onClick={() => {
+                        onOpenChange(false)
+                        onOpenSettings()
+                    }}
+                    className={cn(
+                        baseLinkClassName,
+                        inactiveLinkClassName,
+                        'w-full cursor-pointer gap-3 text-left'
+                    )}
+                >
+                    <SettingsIcon className="size-4 shrink-0" />
+                    {t('app.appearance')}
+                </button>
+
+                {showLogout ? (
+                    <div className="mt-auto pt-2">
+                        <Separator className="!mb-2" />
+                        <button
+                            type="button"
+                            onClick={() => {
+                                onOpenChange(false)
+                                onLogout()
+                            }}
+                            className={cn(
+                                baseLinkClassName,
+                                'w-full cursor-pointer gap-3 text-left text-red-600 hover:bg-red-500/10'
+                            )}
+                        >
+                            <LogOutIcon className="size-4 shrink-0" />
+                            {t('app.logOut')}
+                        </button>
+                    </div>
+                ) : null}
+            </DialogContent>
+        </Dialog>
     )
 }
 

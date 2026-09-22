@@ -1,5 +1,6 @@
 import { RefreshCwIcon } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { useT } from '@/lib/i18n'
 import { cn } from '@/lib/ui'
 
 interface RefreshButtonProps {
@@ -8,10 +9,19 @@ interface RefreshButtonProps {
 }
 
 export function RefreshButton({ isFetching, refetch }: RefreshButtonProps) {
+    const t = useT()
+
     return (
-        <Button size="lg" type="button" variant="outline" disabled={isFetching} onClick={refetch}>
+        <Button
+            size="lg"
+            type="button"
+            variant="outline"
+            disabled={isFetching}
+            onClick={refetch}
+            aria-label={t('common.refresh')}
+        >
             <RefreshCwIcon className={cn(isFetching && 'animate-spin')} />
-            Refresh
+            {t('common.refresh')}
         </Button>
     )
 }

@@ -29,6 +29,7 @@
     "common.moreOptions": "その他のオプション",
     "common.noRemotesCombobox": "リモートが見つかりません。",
     "common.noRemotesTitle": "リモートが見つかりません",
+    "common.refresh": "更新",
     "common.remote": "リモート",
     "common.remoteRequired": "リモートは必須です。",
     "common.reset": "リセット",
@@ -336,6 +337,7 @@
     "transfersTable.destination": "宛先",
     "transfersTable.eta": "ETA",
     "transfersTable.failed": "失敗",
+    "transfersTable.failureReason": "失敗の理由",
     "transfersTable.group": "グループ",
     "transfersTable.progress": "進行状況",
     "transfersTable.running": "実行中",
@@ -345,5 +347,7 @@
     "app.settingsTitle": "設定",
     "app.themeSection": "テーマ",
     "app.darkMode": "ダークモード",
-    "app.languageSection": "言語"
+    "app.languageSection": "言語",
+    "app.menu": "メニュー",
+    "app.appearance": "表示"
 }

@@ -14,16 +14,20 @@ export function PageHeader({
     return (
         <section
             className={cn(
-                'flex flex-col items-start justify-between gap-4 border-b px-6 py-4 sm:flex-row sm:items-end',
+                'flex flex-col gap-3 border-b px-4 py-4 sm:flex-row sm:items-end sm:justify-between sm:gap-4 sm:px-6',
                 className
             )}
             {...props}
         >
             <div className="min-w-0">
-                <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
+                <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">{title}</h1>
                 {description ? <p className="text-muted-foreground">{description}</p> : null}
             </div>
-            {actions ? <div className="flex shrink-0 items-center gap-4">{actions}</div> : null}
+            {actions ? (
+                <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto sm:shrink-0 sm:justify-end sm:gap-4">
+                    {actions}
+                </div>
+            ) : null}
         </section>
     )
 }

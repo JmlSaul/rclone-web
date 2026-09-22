@@ -12,7 +12,6 @@ import {
     XIcon,
 } from 'lucide-react'
 import { useCallback, useMemo, useState } from 'react'
-import { Changelog } from '@/components/Changelog'
 import { toRecord } from '@/components/OptionField'
 import { PageContent } from '@/components/PageContent'
 import { PageHeader } from '@/components/PageHeader'
@@ -21,6 +20,7 @@ import { RefreshButton } from '@/components/RefreshButton'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Spinner } from '@/components/ui/spinner'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { formatBytes, formatDuration, formatTime } from '@/lib/format'
 import { type TranslationKey, t as tStandalone, useT } from '@/lib/i18n'
@@ -207,7 +207,7 @@ export function DashboardPage() {
                         </a>
                     ) : null}
 
-                    <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+                    <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
                         <DashboardMetricCard
                             title={t('dashboard.remotes')}
                             value={String(remotes.length)}
@@ -288,7 +288,7 @@ export function DashboardPage() {
                         )}
                     </section>
 
-                    <section className="grid gap-6 xl:grid-cols-[minmax(0,2fr)_minmax(320px,1fr)]">
+                    <section className="grid gap-4 sm:gap-6 xl:grid-cols-[minmax(0,2fr)_minmax(320px,1fr)]">
                         <Card className="h-full">
                             <CardHeader>
                                 <CardTitle>{t('dashboard.statsTitle')}</CardTitle>
@@ -439,8 +439,6 @@ export function DashboardPage() {
                             </CardContent>
                         </Card>
                     </section>
-
-                    <Changelog />
                 </div>
             </PageContent>
         </PageWrapper>
@@ -535,6 +533,80 @@ function DiscordIcon({ className }: { className?: string }) {
     )
 }
 
+type AttentionInfo = {
+    heading: string
+    items: {
+        title: string
+        description: string
+        meta?: string
+    }[]
+}
+
+function AttentionDetails({
+    attention,
+    remainingCount,
+    variant,
+}: {
+    attention: AttentionInfo
+    remainingCount: number
+    variant: 'tooltip' | 'popover'
+}) {
+    const t = useT()
+    const isTooltip = variant === 'tooltip'
+
+    return (
+        <div className={cn('space-y-3 text-left', !isTooltip && 'min-w-0')}>
+            <p className={cn('font-medium', !isTooltip && 'text-sm wrap-anywhere')}>
+                {attention.heading}
+            </p>
+
+            <div className="space-y-2">
+                {attention.items.slice(0, 3).map((item) => (
+                    <div
+                        key={`${item.title}-${item.description}`}
+                        className={cn('space-y-0.5', !isTooltip && 'min-w-0')}
+                    >
+                        <p
+                            className={cn(
+                                'font-medium',
+                                isTooltip ? 'text-background' : 'text-sm wrap-anywhere'
+                            )}
+                        >
+                            {item.title}
+                        </p>
+                        {item.meta ? (
+                            <p
+                                className={cn(
+                                    isTooltip
+                                        ? 'text-background/70'
+                                        : 'text-xs text-muted-foreground'
+                                )}
+                            >
+                                {formatTime(item.meta)}
+                            </p>
+                        ) : null}
+                        <p
+                            className={cn(
+                                isTooltip
+                                    ? 'text-background/80'
+                                    : 'text-sm wrap-anywhere text-muted-foreground'
+                            )}
+                        >
+                            {item.description}
+                        </p>
+                    </div>
+                ))}
+            </div>
+
+            {remainingCount > 0 ? (
+                <p className={cn(isTooltip ? 'text-background/70' : 'text-xs text-muted-foreground')}>
+                    {t('dashboard.countMore', { count: String(remainingCount) })}
+                </p>
+            ) : null}
+        </div>
+    )
+}
+
 function DashboardMetricCard({
     title,
     value,
@@ -546,20 +618,12 @@ function DashboardMetricCard({
     title: string
     value: string
     icon: LucideIcon
-    attention?: {
-        heading: string
-        items: {
-            title: string
-            description: string
-            meta?: string
-        }[]
-    }
+    attention?: AttentionInfo
     isPending: boolean
     isError: boolean
 }) {
     const t = useT()
-    const visibleItems = attention?.items.slice(0, 3) ?? []
-    const remainingCount = attention ? Math.max(attention.items.length - visibleItems.length, 0) : 0
+    const remainingCount = attention ? Math.max(attention.items.length - 3, 0) : 0
 
     return (
         <Card className={cn(attention && 'bg-amber-500/5 ring-amber-500/25')}>
@@ -588,53 +652,59 @@ function DashboardMetricCard({
                 ) : isPending ? (
                     <div className="text-sm text-muted-foreground">{t('common.loading')}</div>
                 ) : attention ? (
-                    <Tooltip>
-                        <TooltipTrigger
-                            render={
-                                <Button
-                                    type="button"
-                                    variant="secondary"
-                                    size="xs"
-                                    className="w-fit bg-amber-500/10 text-amber-700 hover:bg-amber-500/20 hover:text-amber-800 dark:text-amber-300 dark:hover:text-amber-200"
-                                >
-                                    <AlertTriangleIcon className="size-3.5" />
-                                    {t('dashboard.needsAttention')}
-                                </Button>
-                            }
-                        />
-                        <TooltipContent side="bottom" align="start" className="max-w-sm p-3">
-                            <div className="space-y-3 text-left">
-                                <p className="font-medium">{attention.heading}</p>
+                    <>
+                        {/* 桌面端：悬停查看 */}
+                        <Tooltip>
+                            <TooltipTrigger
+                                render={
+                                    <Button
+                                        type="button"
+                                        variant="secondary"
+                                        size="xs"
+                                        className="hidden w-fit bg-amber-500/10 text-amber-700 hover:bg-amber-500/20 hover:text-amber-800 md:inline-flex dark:text-amber-300 dark:hover:text-amber-200"
+                                    >
+                                        <AlertTriangleIcon className="size-3.5" />
+                                        {t('dashboard.needsAttention')}
+                                    </Button>
+                                }
+                            />
+                            <TooltipContent side="bottom" align="start" className="max-w-sm p-3">
+                                <AttentionDetails
+                                    attention={attention}
+                                    remainingCount={remainingCount}
+                                    variant="tooltip"
+                                />
+                            </TooltipContent>
+                        </Tooltip>
 
-                                <div className="space-y-2">
-                                    {visibleItems.map((item) => (
-                                        <div
-                                            key={`${item.title}-${item.description}`}
-                                            className="space-y-0.5"
-                                        >
-                                            <p className="font-medium text-background">
-                                                {item.title}
-                                            </p>
-                                            {item.meta ? (
-                                                <p className="text-background/70">
-                                                    {formatTime(item.meta)}
-                                                </p>
-                                            ) : null}
-                                            <p className="text-background/80">{item.description}</p>
-                                        </div>
-                                    ))}
-                                </div>
-
-                                {remainingCount > 0 ? (
-                                    <p className="text-background/70">
-                                        {t('dashboard.countMore', {
-                                            count: String(remainingCount),
-                                        })}
-                                    </p>
-                                ) : null}
-                            </div>
-                        </TooltipContent>
-                    </Tooltip>
+                        {/* 移动端：轻点查看 */}
+                        <Popover>
+                            <PopoverTrigger
+                                render={
+                                    <Button
+                                        type="button"
+                                        variant="secondary"
+                                        size="xs"
+                                        className="w-fit bg-amber-500/10 text-amber-700 hover:bg-amber-500/20 hover:text-amber-800 md:hidden dark:text-amber-300 dark:hover:text-amber-200"
+                                    >
+                                        <AlertTriangleIcon className="size-3.5" />
+                                        {t('dashboard.needsAttention')}
+                                    </Button>
+                                }
+                            />
+                            <PopoverContent
+                                side="bottom"
+                                align="start"
+                                className="max-h-[70svh] w-[min(22rem,calc(100vw-1.5rem))] gap-3 overflow-y-auto overscroll-contain p-3"
+                            >
+                                <AttentionDetails
+                                    attention={attention}
+                                    remainingCount={remainingCount}
+                                    variant="popover"
+                                />
+                            </PopoverContent>
+                        </Popover>
+                    </>
                 ) : (
                     <div className="inline-flex items-center gap-2 text-sm text-muted-foreground">
                         <CheckCircle2Icon className="size-4 text-emerald-500" />

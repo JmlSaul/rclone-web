@@ -29,6 +29,7 @@
     "common.moreOptions": "Plus d'options",
     "common.noRemotesCombobox": "Aucun dépôt distant trouvé.",
     "common.noRemotesTitle": "Aucun dépôt distant trouvé",
+    "common.refresh": "Actualiser",
     "common.remote": "dépôt distant",
     "common.remoteRequired": "Le dépôt distant est requis.",
     "common.reset": "Réinitialiser",
@@ -336,6 +337,7 @@
     "transfersTable.destination": "DESTINATION",
     "transfersTable.eta": "ETA",
     "transfersTable.failed": "ÉCHOUÉ",
+    "transfersTable.failureReason": "Raison de l'échec",
     "transfersTable.group": "GROUPE",
     "transfersTable.progress": "PROGRESSION",
     "transfersTable.running": "EN COURS",
@@ -345,5 +347,7 @@
     "app.settingsTitle": "Paramètres",
     "app.themeSection": "Thème",
     "app.darkMode": "Mode sombre",
-    "app.languageSection": "Langue"
+    "app.languageSection": "Langue",
+    "app.menu": "Menu",
+    "app.appearance": "Affichage"
 }

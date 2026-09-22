@@ -303,7 +303,7 @@ export function SettingsPage() {
                 <PageHeader title={t('settings.title')} description={t('settings.description')} />
 
                 <PageContent>
-                    <div className="p-6 mt-6 border rounded-xl bg-card lg:p-8">
+                    <div className="mt-4 rounded-xl border bg-card p-4 sm:mt-6 sm:p-6 lg:p-8">
                         <div className="space-y-8">
                             <div className="space-y-5">
                                 <div className="flex items-center gap-3">
@@ -620,7 +620,7 @@ export function SettingsPage() {
             </div>
 
             <aside className="flex w-full shrink-0 flex-col border-t xl:h-full xl:w-[415px] xl:border-t-0 xl:border-l">
-                <div className="p-6 space-y-8 xl:flex-1 xl:overflow-y-auto">
+                <div className="space-y-8 p-4 sm:p-6 xl:flex-1 xl:overflow-y-auto">
                     <div className="p-5 border rounded-xl bg-primary/5">
                         <div className="inline-flex items-center gap-2 mb-3 text-sm font-semibold uppercase text-primary">
                             <InfoIcon className="size-4" />

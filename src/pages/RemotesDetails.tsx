@@ -109,6 +109,9 @@ const SPREADSHEET_EXTS = new Set(['xlsx', 'xls', 'csv', 'ods', 'tsv', 'numbers']
 const ARCHIVE_EXTS = new Set(['zip', 'tar', 'gz', 'bz2', 'rar', '7z', 'xz', 'zst', 'tgz'])
 const PDF_EXTS = new Set(['pdf'])
 
+// 写死的本地快捷路径，显示在左侧「本地」列表中（可自行增删）
+const LOCAL_SHORTCUTS = ['/downloads']
+
 function getFileExtension(name: string): string {
     const lastDot = name.lastIndexOf('.')
     if (lastDot < 0) return ''
@@ -766,6 +769,12 @@ export function RemotesDetailsPage() {
         if (!q) return sortedRemotes
         return sortedRemotes.filter((name) => name.toLowerCase().includes(q))
     }, [sortedRemotes, sidebarSearch])
+
+    const filteredShortcuts = useMemo(() => {
+        const q = sidebarSearch.trim().toLowerCase()
+        if (!q) return LOCAL_SHORTCUTS
+        return LOCAL_SHORTCUTS.filter((path) => path.toLowerCase().includes(q))
+    }, [sidebarSearch])
     const items = useMemo(() => listQuery.data ?? [], [listQuery.data])
     const filteredItems = useMemo(() => {
         const q = searchTerm.trim().toLowerCase()
@@ -1004,6 +1013,33 @@ export function RemotesDetailsPage() {
 
     // --- Render ---
 
+    const shortcutLinks = (
+        <>
+            {filteredShortcuts.map((shortcut) => {
+                const { icon: ShortcutIcon, className: iconColor } = getDiskIcon(shortcut)
+                return (
+                    <NavLink
+                        key={shortcut}
+                        to={buildLocalPathHref(shortcut, '')}
+                        className={() =>
+                            cn(
+                                'flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+                                isLocalMode && diskPath === shortcut
+                                    ? 'bg-muted text-foreground'
+                                    : 'text-muted-foreground hover:bg-muted/70 hover:text-foreground'
+                            )
+                        }
+                    >
+                        <ShortcutIcon className={cn('size-4 shrink-0', iconColor)} />
+                        <span className="truncate" title={shortcut}>
+                            {getDiskLabel(shortcut)}
+                        </span>
+                    </NavLink>
+                )
+            })}
+        </>
+    )
+
     return (
         <section className="relative flex h-full min-h-0 w-full overflow-hidden">
             <input
@@ -1068,41 +1104,6 @@ export function RemotesDetailsPage() {
                     className="min-h-0 flex-1 space-y-4 overflow-y-auto p-3"
                     onClick={() => setIsMobileSidebarOpen(false)}
                 >
-                    {filteredDisks.length > 0 && (
-                        <div>
-                            <h2 className="px-1 pb-2 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
-                                {t('remotesDetails.sidebarLocal')}
-                            </h2>
-                            <div className="space-y-1">
-                                {filteredDisks.map((disk) => {
-                                    const { icon: DiskIcon, className: iconColor } =
-                                        getDiskIcon(disk)
-                                    return (
-                                        <NavLink
-                                            key={disk}
-                                            to={buildLocalPathHref(disk, '')}
-                                            className={() =>
-                                                cn(
-                                                    'flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
-                                                    isLocalMode && diskPath === disk
-                                                        ? 'bg-muted text-foreground'
-                                                        : 'text-muted-foreground hover:bg-muted/70 hover:text-foreground'
-                                                )
-                                            }
-                                        >
-                                            <DiskIcon
-                                                className={cn('size-4 shrink-0', iconColor)}
-                                            />
-                                            <span className="truncate" title={disk}>
-                                                {getDiskLabel(disk)}
-                                            </span>
-                                        </NavLink>
-                                    )
-                                })}
-                            </div>
-                        </div>
-                    )}
-
                     {(remotesListQuery.isPending ||
                         remotesListQuery.isError ||
                         sortedRemotes.length === 0 ||
@@ -1143,6 +1144,46 @@ export function RemotesDetailsPage() {
                                         </NavLink>
                                     ))
                                 )}
+                            </div>
+                        </div>
+                    )}
+
+                    {(filteredDisks.length > 0 || filteredShortcuts.length > 0) && (
+                        <div>
+                            <h2 className="px-1 pb-2 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+                                {t('remotesDetails.sidebarLocal')}
+                            </h2>
+                            <div className="space-y-1">
+                                {filteredDisks.map((disk) => {
+                                    const { icon: DiskIcon, className: iconColor } =
+                                        getDiskIcon(disk)
+                                    return (
+                                        <Fragment key={disk}>
+                                            {/* 写死的快捷路径：排在根目录 "/" 之前 */}
+                                            {disk === '/' ? shortcutLinks : null}
+                                            <NavLink
+                                                to={buildLocalPathHref(disk, '')}
+                                                className={() =>
+                                                    cn(
+                                                        'flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+                                                        isLocalMode && diskPath === disk
+                                                            ? 'bg-muted text-foreground'
+                                                            : 'text-muted-foreground hover:bg-muted/70 hover:text-foreground'
+                                                    )
+                                                }
+                                            >
+                                                <DiskIcon
+                                                    className={cn('size-4 shrink-0', iconColor)}
+                                                />
+                                                <span className="truncate" title={disk}>
+                                                    {getDiskLabel(disk)}
+                                                </span>
+                                            </NavLink>
+                                        </Fragment>
+                                    )
+                                })}
+                                {/* 没有根目录条目时，快捷路径排在最后 */}
+                                {filteredDisks.includes('/') ? null : shortcutLinks}
                             </div>
                         </div>
                     )}

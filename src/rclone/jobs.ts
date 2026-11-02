@@ -441,3 +441,13 @@ export async function stopJob(jobid: number) {
         params: { query: { jobid } },
     })
 }
+
+/**
+ * 删除某个任务所在的统计分组，连同该分组里的传输/失败记录一起清除。
+ * 注意：进行中的任务不能删除，调用方需自行过滤。
+ */
+export async function deleteJobStatsGroup(jobid: number) {
+    await rclone('/core/stats-delete', {
+        params: { query: { group: `job/${jobid}` } },
+    })
+}

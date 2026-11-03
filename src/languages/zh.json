@@ -181,6 +181,8 @@
     "remotesDetails.failedToLoadRemotes": "加载远程存储失败",
     "remotesDetails.folderNamePrompt": "输入文件夹名称：",
     "remotesDetails.goToRemotes": "前往远程存储",
+    "remotesDetails.itemCount": "{count} 个项目",
+    "remotesDetails.itemCountFiltered": "{count} / {total} 个项目",
     "remotesDetails.listError": "无法列出文件",
     "remotesDetails.modified": "修改时间",
     "remotesDetails.moveHere": "移动到此处",

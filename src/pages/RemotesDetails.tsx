@@ -1269,6 +1269,18 @@ export function RemotesDetailsPage() {
                                     ))}
                                 </BreadcrumbList>
                             </Breadcrumb>
+                            {listQuery.isSuccess ? (
+                                <span className="shrink-0 text-xs tabular-nums text-muted-foreground">
+                                    {searchTerm.trim()
+                                        ? t('remotesDetails.itemCountFiltered', {
+                                              count: String(filteredItems.length),
+                                              total: String(items.length),
+                                          })
+                                        : t('remotesDetails.itemCount', {
+                                              count: String(items.length),
+                                          })}
+                                </span>
+                            ) : null}
                         </div>
 
                         <div className="flex flex-wrap items-center gap-2">

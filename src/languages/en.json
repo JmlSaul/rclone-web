@@ -181,6 +181,8 @@
     "remotesDetails.failedToLoadRemotes": "Failed to load remotes",
     "remotesDetails.folderNamePrompt": "Enter folder name:",
     "remotesDetails.goToRemotes": "Go to remotes",
+    "remotesDetails.itemCount": "{count} items",
+    "remotesDetails.itemCountFiltered": "{count} of {total} items",
     "remotesDetails.listError": "Unable to list files",
     "remotesDetails.modified": "Modified",
     "remotesDetails.moveHere": "Move here",

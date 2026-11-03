@@ -181,6 +181,8 @@
     "remotesDetails.failedToLoadRemotes": "No se pudieron cargar los remotos",
     "remotesDetails.folderNamePrompt": "Introduce el nombre de la carpeta:",
     "remotesDetails.goToRemotes": "Ir a remotos",
+    "remotesDetails.itemCount": "{count} elementos",
+    "remotesDetails.itemCountFiltered": "{count} de {total} elementos",
     "remotesDetails.listError": "No se pudieron listar los archivos",
     "remotesDetails.modified": "Modificado",
     "remotesDetails.moveHere": "Mover aquí",

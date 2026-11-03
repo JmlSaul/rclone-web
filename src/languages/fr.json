@@ -181,6 +181,8 @@
     "remotesDetails.failedToLoadRemotes": "Impossible de charger les dépôts distants",
     "remotesDetails.folderNamePrompt": "Entrez le nom du dossier :",
     "remotesDetails.goToRemotes": "Voir les dépôts distants",
+    "remotesDetails.itemCount": "{count} éléments",
+    "remotesDetails.itemCountFiltered": "{count} sur {total} éléments",
     "remotesDetails.listError": "Impossible de lister les fichiers",
     "remotesDetails.modified": "Modifié",
     "remotesDetails.moveHere": "Déplacer ici",

@@ -181,6 +181,8 @@
     "remotesDetails.failedToLoadRemotes": "リモートの読み込みに失敗しました",
     "remotesDetails.folderNamePrompt": "フォルダー名を入力:",
     "remotesDetails.goToRemotes": "リモートに移動",
+    "remotesDetails.itemCount": "{count} 件",
+    "remotesDetails.itemCountFiltered": "{count} / {total} 件",
     "remotesDetails.listError": "ファイル一覧を取得できません",
     "remotesDetails.modified": "更新日時",
     "remotesDetails.moveHere": "ここに移動",
